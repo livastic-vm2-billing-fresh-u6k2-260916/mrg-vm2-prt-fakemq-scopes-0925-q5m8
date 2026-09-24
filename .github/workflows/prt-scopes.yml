@@ -1,0 +1,45 @@
+name: VM2 PRT Scope Server
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+
+jobs:
+  scope-report-ready:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout trusted base only
+        uses: actions/checkout@v5
+
+      - name: Detect Mergify refs
+        id: refs
+        uses: Mergifyio/gha-mergify-ci@v25
+        with:
+          action: scopes-git-refs
+
+      - name: Compute trusted scope from fetched objects
+        id: scope
+        shell: bash
+        env:
+          BASE: ${{ steps.refs.outputs.base }}
+          HEAD: ${{ steps.refs.outputs.head }}
+        run: |
+          set -euo pipefail
+          echo "BASE=$BASE"
+          echo "HEAD=$HEAD"
+          git fetch --no-tags origin "$BASE" "$HEAD"
+          if git diff --name-only "$BASE...$HEAD" | grep -q '^protected/'; then
+            echo "scopes=protected" >> "$GITHUB_OUTPUT"
+            echo "VM2_SCOPE_RESULT=protected"
+          else
+            echo "scopes=safe" >> "$GITHUB_OUTPUT"
+            echo "VM2_SCOPE_RESULT=safe"
+          fi
+
+      - name: Upload scope for actual PR head
+        uses: Mergifyio/gha-mergify-ci@v25
+        with:
+          action: scopes-upload
+          scopes: ${{ steps.scope.outputs.scopes }}
+          token: ${{ secrets.MERGIFY_TOKEN }}
