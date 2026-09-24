@@ -1,0 +1,14 @@
+scopes:
+  source:
+    manual:
+
+pull_request_rules:
+  - name: VM2 server-scope safe-only merge Q5M8
+    conditions:
+      - base = main
+      - author = livastic-vm2-primary-20260911
+      - scope = safe
+      - check-success = scope-report-ready
+    actions:
+      merge:
+        method: merge
