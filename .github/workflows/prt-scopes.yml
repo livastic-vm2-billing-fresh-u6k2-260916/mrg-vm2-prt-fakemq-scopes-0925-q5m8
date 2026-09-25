@@ -41,8 +41,8 @@ jobs:
         if: steps.scope.outputs.scopes == 'safe'
         shell: bash
         run: |
-          echo "VM2_DELAY_SAFE_REVISION=90"
-          sleep 90
+          echo "VM2_DELAY_SAFE_REVISION=180"
+          sleep 180
 
       - name: Upload scope using official default pinned CLI
         uses: Mergifyio/gha-mergify-ci@v25
