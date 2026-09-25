@@ -41,12 +41,26 @@ jobs:
         if: steps.scope.outputs.scopes == 'safe'
         shell: bash
         run: |
-          echo "VM2_DELAY_SAFE_REVISION=75"
-          sleep 75
+          echo "VM2_DELAY_SAFE_REVISION=90"
+          sleep 90
 
-      - name: Upload scope for actual PR head
+      - name: Upload scope using official default pinned CLI
         uses: Mergifyio/gha-mergify-ci@v25
         with:
           action: scopes-upload
           scopes: ${{ steps.scope.outputs.scopes }}
           token: ${{ secrets.MERGIFY_TOKEN }}
+
+      - name: Current-head gate keeps revision A unmergeable
+        shell: bash
+        env:
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$HEAD"
+          if git cat-file -e "$HEAD:protected/critical.txt" 2>/dev/null; then
+            echo "VM2_CURRENT_HEAD_GATE=protected"
+            exit 0
+          fi
+          echo "VM2_CURRENT_HEAD_GATE=safe"
+          exit 1
