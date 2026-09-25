@@ -37,6 +37,13 @@ jobs:
             echo "VM2_SCOPE_RESULT=safe"
           fi
 
+      - name: Deterministically delay safe revision upload
+        if: steps.scope.outputs.scopes == 'safe'
+        shell: bash
+        run: |
+          echo "VM2_DELAY_SAFE_REVISION=75"
+          sleep 75
+
       - name: Upload scope for actual PR head
         uses: Mergifyio/gha-mergify-ci@v25
         with:
