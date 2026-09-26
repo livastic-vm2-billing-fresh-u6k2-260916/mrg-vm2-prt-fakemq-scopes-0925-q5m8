@@ -1,0 +1,31 @@
+name: VM2 commit-scoped external-fork endpoint probe 0926
+on:
+  push:
+    branches:
+      - vm2-commit-scope-endpoint-0926
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Mergify commit-scoped scope endpoint
+        env:
+          MERGIFY_TOKEN: ${{ secrets.MERGIFY_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_status=$(curl -sS -o /tmp/app.json -w '%{http_code}'             -H "Authorization: Bearer ${MERGIFY_TOKEN}"             https://api.mergify.com/v1/application)
+          echo "APPLICATION_STATUS=${app_status}"
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/app.json'))
+          print("APPLICATION_SCOPE="+str(d.get("scope")))
+          print("APPLICATION_ACCOUNT="+str((d.get("account_scope") or {}).get("login")))
+          PY
+
+          main_status=$(curl -sS -o /tmp/main-body -w '%{http_code}' -X PUT             -H 'Content-Type: application/json'             -H "Authorization: Bearer ${MERGIFY_TOKEN}"             --data '{"scopes":["vm2-main-control-0926"],"all_scopes":false}'             https://api.mergify.com/v1/repos/livastic-vm2-billing-fresh-u6k2-260916/mrg-vm2-prt-fakemq-scopes-0925-q5m8/commits/07b609c0c4607cb4a24e3c127ed3e74d80640b01/scopes)
+          echo "MAIN_COMMIT_STATUS=${main_status}"
+
+          fork_status=$(curl -sS -o /tmp/fork-body -w '%{http_code}' -X PUT             -H 'Content-Type: application/json'             -H "Authorization: Bearer ${MERGIFY_TOKEN}"             --data '{"scopes":["vm2-extfork-control-0926"],"all_scopes":false}'             https://api.mergify.com/v1/repos/livastic-vm2-billing-fresh-u6k2-260916/mrg-vm2-prt-fakemq-scopes-0925-q5m8/commits/da64156ce83fd940dbb7b21df72da4bed765206c/scopes)
+          echo "EXTERNAL_FORK_COMMIT_STATUS=${fork_status}"
